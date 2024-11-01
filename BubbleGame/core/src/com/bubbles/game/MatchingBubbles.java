@@ -56,15 +56,17 @@ public class MatchingBubbles extends ApplicationAdapter {
 			// checkGridForDestroy(bubbles) before checking canSwitch (or with an else) in case
 			// new bubbles have spawned that are 3 in a row
 			moving = checkGridForDestroy(bubbles); // This will set to true/false
-			if (canSwitch && !moving) { // May need to mark canSwitch to false at some point in the case it is true, not sure where !
+			if (canSwitch && !moving) { // If user bubbles that were switched are valid and the grid isn't moving
 				if (gridSwitchCheck()) { // If bubbles would be able to be destroyed (checked via a fake grid)
 					// Then run the real grid with the switch of the bubbles clicked
 					int i = switchBubbles[0].i;
 					int j = switchBubbles[0].j;
-					bubbles[i][j] = new Bubble(switchBubbles[1]);
+					bubbles[i][j] = new Bubble(switchBubbles[1].color, switchBubbles[0].i, switchBubbles[0].j, switchBubbles[0].x, switchBubbles[0].y, switchBubbles[0].destroyBubble);
+					// The above looks long but does one large update rather than a bunch of small ones, overall works nicer
+
 					i = switchBubbles[1].i;
 					j = switchBubbles[1].j;
-					bubbles[i][j] = new Bubble(switchBubbles[0]);
+					bubbles[i][j] = new Bubble(switchBubbles[0].color, switchBubbles[1].i, switchBubbles[1].j, switchBubbles[1].x, switchBubbles[1].y, switchBubbles[1].destroyBubble);
 
 					// Move the grid and set the variable
 					moving = checkGridForDestroy(bubbles); // Should always set moving to true because of gridSwitchCheck()
@@ -118,7 +120,7 @@ public class MatchingBubbles extends ApplicationAdapter {
 			// and is the the same column as the first bubble
 			canSwitch = true;
 		} else { // The bubbles pressed aren't valid switch targets
-			// The second bubble doesn't match the switch criteria
+			// The second bubble doesn't match the switch criteria, null both out
 			switchBubbles[0] = null;
 			switchBubbles[1] = null;
 			canSwitch = false;
@@ -144,12 +146,14 @@ public class MatchingBubbles extends ApplicationAdapter {
 		i = switchBubbles[0].i;
 		j = switchBubbles[0].j;
 
-		bubblesCheck[i][j] = new Bubble(switchBubbles[1]);
+		// This updates the new bubbles completely, even though it is a bit long
+		bubblesCheck[i][j] = new Bubble(switchBubbles[1].color, switchBubbles[0].i, switchBubbles[0].j, switchBubbles[0].x, switchBubbles[0].y, switchBubbles[0].destroyBubble);
 
 		i = switchBubbles[1].i;
 		j = switchBubbles[1].j;
 
-		bubblesCheck[i][j] = new Bubble(switchBubbles[0]);
+		// This updates the new bubbles completely, even though it is a bit long
+		bubblesCheck[i][j] = new Bubble(switchBubbles[0].color, switchBubbles[1].i, switchBubbles[1].j, switchBubbles[1].x, switchBubbles[1].y, switchBubbles[1].destroyBubble);
 
 		boolean checkGridSwitch = checkGridForDestroy(bubblesCheck);
 		return checkGridSwitch;
@@ -299,9 +303,10 @@ public class MatchingBubbles extends ApplicationAdapter {
 		for (int i = gridSize - 1; i > 0; i--) { // Don't check top row for updating, updates are based on the row above
 			for (int j = 0; j < gridSize; j++) {
 					if (bubbles[i][j].destroyBubble == true || bubbles[i][j].i < lowestDestroyedBubble[j]) {
-					// If this bubble was destroyed 	or any bubble below it was destroyed, become bubble above
-					bubbles[i][j] = new Bubble(bubbles[i - 1][j]); // - 1 looks up
-					bubbles[i][j].i = i; // This could effectively be done in the copy function in the Bubble class, but leaving it here for now
+					// If this bubble was destroyed or any bubble below it was destroyed, become bubble above
+					// - 1 looks up
+					// Once again use the large update function
+					bubbles[i][j] = new Bubble(bubbles[i - 1][j].color, i, bubbles[i - 1][j].j, bubbles[i - 1][j].x, bubbles[i - 1][j].y, bubbles[i - 1][j].destroyBubble);
 				}
 			}
 		}
@@ -333,7 +338,7 @@ public class MatchingBubbles extends ApplicationAdapter {
 	// Used to fill the switch bubble array, what bubbles the player clicks
 	static public void fillSwitchBubble(int xPos, int yPos) {
 		if (!moving) { // If the board is moving, player can't choose new bubbles
-			for (int i = 0; i < gridSize; i++) {
+			for (int i = 0; i < gridSize; i++) { // This could be turned into a double case statement search rather than nested for loop
 				for (int j  = 0; j < gridSize; j++) {
 					if (bubbles[i][j].checkClick(xPos, yPos)) { // !!! Make sure checkClick works correctly, finds the bubble clicked on
 						if (switchBubbles[0] == null) { // If the first position is empty

@@ -36,6 +36,7 @@ public class Bubble {
     // For copying purposes, called deep copying by GPT
     // Before this I was using the = to copy, but that was just copying a reference, which was dirty
     // Now it uses a copy constructor, which doesn't copy references but instead creates completely new objects 
+    // This has become unused, but I'm leaving it in so I can look at it later or at least remember deep copying
     public Bubble(Bubble original) {
         this.x = original.x;
         this.y = original.y;
@@ -43,6 +44,17 @@ public class Bubble {
         this.j = original.j;
         this.color = original.color;
         this.destroyBubble = original.destroyBubble;
+    }
+
+    // This is used when a bubble needs to be copied but not have the same reference
+    // There being a color and destroyBubble value differ it from standard constructor
+    public Bubble(char colorU, int iU, int jU, int xU, int yU, boolean destroyU) { // U for updated, given the thing the bubble needs to become
+        this.color = colorU;
+        this.i = iU;
+        this.j = jU;
+        this.x = xU;
+        this.y = yU;
+        this.destroyBubble = destroyU;
     }
 
     // Draws a circle, depends on the circle's color
