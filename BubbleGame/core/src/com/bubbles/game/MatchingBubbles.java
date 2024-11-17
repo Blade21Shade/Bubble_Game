@@ -1,7 +1,4 @@
 package com.bubbles.game;
-
-import java.util.ArrayList;
-
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
@@ -167,94 +164,94 @@ public class MatchingBubbles extends ApplicationAdapter {
 		// If so, bubbles are marked for destruction within the code
 		boolean destroyAny = false;
 
-		// !!! i is row, j is position in column (row)
-		// array[][] = array[which array][position in array]
-
-		// Used for which color we want to check for
-		char colorCheck = 'n'; // n stands for none as a placeholder
-
-		// Used for destroying stuff later if needed
-		ArrayList<int[]> destroyBubbles = new ArrayList<>();
-
-		// Records i and j positions for bubbles that need to be destroyed, these are
-		// passed into an arrayList
-		int[][][] ints = new int[5][5][2];
+		// Make color array
+		// This array is used so the bubbles can have their colors cleared when being marked for destruction, rather than afterward as was done before
+		// This could potentially speed up the program, but because the program is so simple I doubt it would be meaningful
+		char[][] colorArray = new char[gridSize][gridSize];
 		for (int i = 0; i < gridSize; i++) {
 			for (int j = 0; j < gridSize; j++) {
-				ints[i][j][0] = i;
-				ints[i][j][1] = j;
+				colorArray[i][j] = bubbles[i][j].color;
 			}
 		}
 
-		// Scanning grid to see if bubbles need to be marked for destruction
+		// Check each row and column once to see if there are 3+ bubbles of the same color in a row
+		// This logic replaced other logic which took longer
+		// Specifically, the old logic did 18 checks while this one only does 10 (each row and column once)
+		// The other also used an int[][][] and arrayList<int[]> to mark bubbles for destruction
+		// While that worked fine, the new method is more direct and I assume to be faster (again for such a simple program, it realistically probably doesn't matter)
+
+		// Row check
 		for (int i = 0; i < gridSize; i++) {
-			for (int j = 0; j < gridSize; j++) {
+			int sameColorCount = 1; // Number of bubbles the same color in a row
+			// Start at 1 to mark first bubble in pattern as true
 
-				// If the bubble is not on the right edge or 1 from ledge, start looking right
-				if (j < gridSize - 2) {
-					colorCheck = bubbles[i][j].color;
-					for (int temp = j; temp < gridSize; temp++) { // temp = j so the bubble can add itself
-						if (bubbles[i][temp].color == colorCheck) {
-							destroyBubbles.add(0, ints[i][temp]);
-						} else {
-							break;
-						}
-					}
+			char currentBubbleColorMatch = colorArray[i][0]; // The current bubble color we want to match
+			
+			// Check each bubble in the row, if the same as currentBubbleColorMatch increment sameColorCount
+			// If they aren't the same, set the new color and reset sameColorCount 
+			for (int j = 1; j < gridSize; j++) {
+
+				// Check if the current bubble is the same as the color that is set
+				if (colorArray[i][j] == currentBubbleColorMatch) {
+					sameColorCount++; // Same color as the current value, so increment
+				} else {
+					currentBubbleColorMatch = colorArray[i][j]; // Change color check to new value
+					sameColorCount = 1; // Reset sameColorCount
 				}
 
-				// Mark bubbles to be destroyed
-				// This has to occur twice in this for-loop as otherwise incorrect bubbles could be added into
-				// destroyBubbles, this ensures that every check is clean
-				if (destroyBubbles.size() >= 3) {
-					int[] ints2 = new int[2];
-					for (int k = 0; k < destroyBubbles.size(); k++) {
-						ints2 = destroyBubbles.get(k);
-						bubbles[ints2[0]][ints2[1]].markDestroyBubble();
-					}
-					destroyAny = true;
+				// 3+ in a row means we eliminate, check to see if there are 3+ in a row
+				if (sameColorCount == 3) { // If we get three in a row, mark the three to be destroyed
+					bubbles[i][j].markDestroyBubble();
+					bubbles[i][j-1].markDestroyBubble();
+					bubbles[i][j-2].markDestroyBubble();
+
+					// Also set their colors to clear
+					bubbles[i][j].setColor('c');
+					bubbles[i][j-1].setColor('c');
+					bubbles[i][j-2].setColor('c');
+
+					destroyAny = true; // Set destroyAny
+				} else if (sameColorCount > 3) { // More then 3 in a row, keep marking for destruction
+					bubbles[i][j].markDestroyBubble();
+					bubbles[i][j].setColor('c'); // Also set color to clear
 				}
-
-				// Always clear the list, even if there were less than 3 bubbles
-				destroyBubbles.clear();
-
-				// If the bubble is not in the bottom row or 1 from bottom, start looking down
-				if (i < gridSize - 2) {
-					colorCheck = bubbles[i][j].color;
-					for (int temp = i; temp < gridSize; temp++) { // temp = i so the bubble can add itself
-						if (bubbles[temp][j].color == colorCheck) {
-							destroyBubbles.add(0, ints[temp][j]);
-						} else {
-							break;
-						}
-					}
-				}
-
-				// Mark bubbles to be destroyed
-				if (destroyBubbles.size() >= 3) {
-					int[] ints2 = new int[2];
-					for (int k = 0; k < destroyBubbles.size(); k++) {
-						ints2 = destroyBubbles.get(k);
-						bubbles[ints2[0]][ints2[1]].markDestroyBubble();
-					}
-					destroyAny = true;
-				}
-
-				// Always clear the list, even if there were less than 3 bubbles
-				destroyBubbles.clear();
 			}
+		}
 
-		} // End of for meant to mark bubbles to be destroyed
+		// Column check
+		for (int j = 0; j < gridSize; j++) { // j is used for columns in the rest of the program, so doing the same here
+			int sameColorCount = 1; // Number of bubbles the same color in a column
+			// Start at 1 to mark first bubble in pattern as true
 
-		// Now do actual deleting (really just make bubbles clear)
-		if (destroyAny) { // See if anything needed to be destroyed
-			for (int i = 0; i < gridSize; i++) {
-				for (int j = 0; j < gridSize; j++) {
-					// Delete bubbles
-					// Search through bubbles[][] for any bubble marked with "destroyBubble"
-					// If that bubble is destroyed, delete it (turn it's color to clear)
-					if (bubbles[i][j].destroyBubble == true) {
-						bubbles[i][j].setColor('c');
-					}
+			char currentBubbleColorMatch = colorArray[0][j]; // The current bubble color we want to match
+			
+			// Check each bubble in the column, if the same as currentBubbleColorMatch increment sameColorCount
+			// If they aren't the same, set the new color and reset sameColorCount 
+			for (int i = 1; i < gridSize; i++) {
+
+				// Check if the current bubble is the same as the color that is set
+				if (colorArray[i][j] == currentBubbleColorMatch) {
+					sameColorCount++; // Same color as the current value, so increment
+				} else {
+					currentBubbleColorMatch = colorArray[i][j]; // Change color check to new value
+					sameColorCount = 1; // Reset sameColorCount
+				}
+
+				// 3+ in a row means we eliminate, check to see if there are 3+ in a row (as in next to each other)
+				if (sameColorCount == 3) { // If we get three in a row, mark the three to be destroyed
+					bubbles[i][j].markDestroyBubble();
+					bubbles[i-1][j].markDestroyBubble();
+					bubbles[i-2][j].markDestroyBubble();
+
+					// Also set their colors to clear
+					bubbles[i][j].setColor('c');
+					bubbles[i-1][j].setColor('c');
+					bubbles[i-2][j].setColor('c');
+					
+					destroyAny = true; // Set destroyAny
+				} else if (sameColorCount > 3) { // More then 3 in a row, keep marking for destruction
+					bubbles[i][j].markDestroyBubble();
+					bubbles[i][j].setColor('c');
 				}
 			}
 		}
@@ -338,9 +335,9 @@ public class MatchingBubbles extends ApplicationAdapter {
 	// Used to fill the switch bubble array, what bubbles the player clicks
 	static public void fillSwitchBubble(int xPos, int yPos) {
 		if (!moving) { // If the board is moving, player can't choose new bubbles
-			for (int i = 0; i < gridSize; i++) { // This could be turned into a double case statement search rather than nested for loop
+			for (int i = 0; i < gridSize; i++) { // This could be turned into a double if statement search rather than nested for loop
 				for (int j  = 0; j < gridSize; j++) {
-					if (bubbles[i][j].checkClick(xPos, yPos)) { // !!! Make sure checkClick works correctly, finds the bubble clicked on
+					if (bubbles[i][j].checkClick(xPos, yPos)) { // Finds the bubble clicked on
 						if (switchBubbles[0] == null) { // If the first position is empty
 							switchBubbles[0] = new Bubble(bubbles[i][j]);
 							return; // If this point has been reached the function has finished its purpose so return

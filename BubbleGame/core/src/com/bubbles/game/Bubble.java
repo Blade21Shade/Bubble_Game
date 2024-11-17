@@ -93,11 +93,11 @@ public class Bubble {
         if (charColor == 'r') {
             color = 'r';
         } else if (charColor == 'b') {
-            color = 'r';
+            color = 'b';
         } else if (charColor == 'g') {
-            color = 'r';
+            color = 'g';
         } else if (charColor == 'o') {
-            color = 'r';
+            color = 'o';
         } else if (charColor == 'c') {
             color = 'c'; // Clear
         }
@@ -111,6 +111,10 @@ public class Bubble {
     public void updateBubblePosition() {
         // No x movement, bubbles don't move horizontally
         y -= movingSpeed;
+    }
+
+    static public int getRadius() {
+        return radius;
     }
 
 }
