@@ -104,7 +104,7 @@ public class MatchingBubbles extends ApplicationAdapter {
 	// directly to the left or right of it
 	// or the second bubble is in the same column as the first and directly above or
 	// below it
-	private static void checkNextTo() {
+	private static void checkNextToOtherSwitch() {
 		// Check to see if the bubbles are next to each other
 		if ((switchBubbles[1].i == switchBubbles[0].i - 1 || switchBubbles[1].i == switchBubbles[0].i + 1)
 				&& switchBubbles[1].j == switchBubbles[0].j) {
@@ -333,23 +333,51 @@ public class MatchingBubbles extends ApplicationAdapter {
 	}
 
 	// Used to fill the switch bubble array, what bubbles the player clicks
+	// This is an updated function
+	// Before, this function would check every bubble to see if the position matched, meaning a max of 25 checks
+	// Now, it does a maximum of 10 checks 
 	static public void fillSwitchBubble(int xPos, int yPos) {
-		if (!moving) { // If the board is moving, player can't choose new bubbles
-			for (int i = 0; i < gridSize; i++) { // This could be turned into a double if statement search rather than nested for loop
-				for (int j  = 0; j < gridSize; j++) {
-					if (bubbles[i][j].checkClick(xPos, yPos)) { // Finds the bubble clicked on
-						if (switchBubbles[0] == null) { // If the first position is empty
-							switchBubbles[0] = new Bubble(bubbles[i][j]);
-							return; // If this point has been reached the function has finished its purpose so return
-						} else { // If the first position is not empty
-							switchBubbles[1] = new Bubble(bubbles[i][j]);
+		// i and j positions
+		int jPos = -1; // -1 stands for "Not found"
+		int iPos = -1;
 
-							checkNextTo(); // See if the bubbles can switch, returns it to the global variable
-							return; // If this point has been reached the function has finished its purpose so return
-						}
-					}
-				}
+		// y value used when creating bubbles for the first time: 440 - 70 * i
+		// Search for i position
+		for (int i = 0; i <= gridSize; i++ ) {
+			if (yPos >= 440 - 70 * i - Bubble.getRadius() && yPos <= 440 - 70 * i + Bubble.getRadius()) {
+				iPos = i;
+				break;
 			}
+		}
+
+		// If a suitable i position wasn't found leave
+		if (iPos == -1) {
+			return;
+		}
+
+		// x value used when creating bubbles for the first time: 320 + 70 * j
+		// Search for j position
+		for (int j = 0; j <= gridSize; j++ ) {
+			if (xPos >= 320 + 70 * j - Bubble.getRadius() && xPos <= 320 + 70 * j + Bubble.getRadius()) {
+				jPos = j;
+				break;
+			}
+		}
+
+		// If a suitable j position wasn't found leave
+		if (jPos == -1) {
+			return;
+		}		
+
+		// i and j for x and y found, now fill switchBubbles
+		if (switchBubbles[0] == null) { // If the first position is empty
+			switchBubbles[0] = new Bubble(bubbles[iPos][jPos]);
+			return; // If this point has been reached the function has finished its purpose so return
+		} else { // If the first position is not empty
+			switchBubbles[1] = new Bubble(bubbles[iPos][jPos]);
+
+			checkNextToOtherSwitch(); // See if the bubbles can switch, returns it to the global variable
+			return; // If this point has been reached the function has finished its purpose so return
 		}
 	}
 }
